@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AutoHub – Vehicle Service</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff6f0;--card:#ffffff;--ink:#3b2f4a;--mute:#8a7d99;--pink:#ff8fab;--mint:#8fe3cf;--sky:#8ecbff;--sun:#ffd98e;--lav:#c9b6ff;--line:#f1e3ea;--shadow:0 6px 18px rgba(255,143,171,.18);
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#241c2e;--card:#322842;--ink:#f6eefc;--mute:#b3a6c4;--line:#463a58;--shadow:0 6px 18px rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{--bg:#241c2e;--card:#322842;--ink:#f6eefc;--mute:#b3a6c4;--line:#463a58;--shadow:0 6px 18px rgba(0,0,0,.3)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.45}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.logo{font-size:26px;font-weight:800}.logo span{color:var(--pink)}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+nav button,.btn{border:0;border-radius:999px;padding:9px 16px;font:inherit;font-weight:800;cursor:pointer;background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+nav button.on,.btn.pink{background:var(--pink);color:#fff}
+.btn.mint{background:var(--mint);color:#1f4d44}.btn.sky{background:var(--sky);color:#16405f}.btn.sun{background:var(--sun);color:#5b4210}.btn.ghost{background:transparent;box-shadow:none;border:2px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}.btn.sm{padding:6px 12px;font-size:13px}
+.card{background:var(--card);border-radius:22px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+h2{margin:0 0 10px;font-size:22px}h3{margin:0 0 6px}
+.mute{color:var(--mute);font-size:14px}
+input,select,textarea{width:100%;padding:10px 14px;border-radius:14px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;margin:4px 0 10px}
+label{font-weight:800;font-size:13px;color:var(--mute)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1 1 140px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.chip{padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--bg);cursor:pointer;font-weight:700;font-size:14px;color:var(--ink)}
+.chip.on{background:var(--lav);border-color:var(--lav);color:#2d1f4f}.chip:disabled{opacity:.4;text-decoration:line-through;cursor:not-allowed}
+.badge{display:inline-block;padding:3px 12px;border-radius:999px;font-size:12px;font-weight:800;color:#3b2f4a}
+.s-Pending{background:var(--sun)}.s-Confirmed{background:var(--sky)}.s-In\ Progress{background:var(--lav)}.s-Completed{background:var(--mint)}.s-Delivered{background:#b8f0a8}.s-Cancelled{background:#ffb3b3}
+.steps{display:flex;gap:4px;margin:10px 0}.steps i{flex:1;height:8px;border-radius:9px;background:var(--line)}.steps i.f{background:var(--pink)}
+.emoji{font-size:34px}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.stars button{background:none;border:0;font-size:26px;cursor:pointer;padding:0 2px;filter:grayscale(1);opacity:.5}.stars button.on{filter:none;opacity:1}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:999px;font-weight:800;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.3s;z-index:9;max-width:90%}
+#toast.show{opacity:1}
+.bill td{padding:4px 0}.bill td:last-child{text-align:right;font-weight:800}
+.hero{background:linear-gradient(135deg,var(--pink),var(--lav));color:#fff;border-radius:26px;padding:22px;margin-bottom:14px}
+.hero h2{color:#fff;font-size:26px}
+.stat{text-align:center}.stat b{font-size:30px;display:block;color:var(--pink)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="toast"></div>
+<script>
+const SLOTS=['09:00','10:00','11:00','12:00','14:00','15:00','16:00','17:00'];
+const FLOW=['Pending','Confirmed','In Progress','Completed','Delivered'];
+const SEED=()=>({users:[
+ {id:'a1',name:'Admin Amy',email:'admin@autohub.com',pw:'admin123',phone:'',role:'admin'},
+ {id:'p1',name:'Mechanic Max',email:'mech@autohub.com',pw:'mech123',phone:'',role:'provider'},
+ {id:'p2',name:'Mechanic Mia',email:'mia@autohub.com',pw:'mech123',phone:'',role:'provider'}],
+ vehicles:[],appts:[],notes:[],
+ services:[
+ {id:'s1',emoji:'🛢️',name:'Oil Change',desc:'Fresh engine oil and filter for a happy engine.',price:1200},
+ {id:'s2',emoji:'🫧',name:'Full Wash & Detail',desc:'Sparkly inside and out, vacuum included.',price:800},
+ {id:'s3',emoji:'🛞',name:'Tyre Rotation & Balance',desc:'Even wear and a smooth ride.',price:900},
+ {id:'s4',emoji:'🔋',name:'Battery Check',desc:'Health test and terminal cleaning.',price:400},
+ {id:'s5',emoji:'🛑',name:'Brake Service',desc:'Pads, discs and fluid inspection.',price:2500},
+ {id:'s6',emoji:'❄️',name:'AC Service',desc:'Gas top-up and cabin filter refresh.',price:1800}]});
+let S,sess=null,view='home',draft={},msg='',authTab='login',loginErr='';
+try{S=JSON.parse(localStorage.getItem('autohub')||'null')}catch(e){S=null}
+if(!S)S=SEED();
+const save=()=>{try{localStorage.setItem('autohub',JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const inr=n=>'₹'+Number(n).toLocaleString('en-IN');
+const me=()=>S.users.find(u=>u.id===sess);
+const svc=id=>S.services.find(s=>s.id===id)||{name:'(removed)',emoji:'🔧',price:0};
+const veh=id=>S.vehicles.find(v=>v.id===id)||{make:'?',model:'',reg:''};
+const toast=t=>{const e=$('toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2600)};
+function notify(to,text){S.notes.unshift({id:uid(),to,text,at:new Date().toLocaleString()});save()}
+const days=()=>Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()+i+1);return d.toISOString().slice(0,10)});
+const dlabel=d=>new Date(d+'T00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+const taken=(d,t,ex)=>S.appts.filter(a=>a.date===d&&a.slot===t&&a.status!=='Cancelled'&&a.id!==ex).length>=2;
+const bill=a=>{const s=svc(a.sid).price,g=Math.round(s*.18);return{s,g,t:s+g}};
+const go=v=>{view=v;msg='';render()};
+
+/* ---------- auth ---------- */
+function doLogin(){const e=$('le').value.trim().toLowerCase(),p=$('lp').value;
+ const u=S.users.find(x=>x.email===e&&x.pw===p);
+ if(!u){loginErr='Oops! Wrong email or password 🙈';return render()}
+ sess=u.id;loginErr='';view='home';render();toast('Welcome back, '+u.name.split(' ')[0]+'! 💖')}
+function doReg(){const n=$('rn').value.trim(),e=$('re').value.trim().toLowerCase(),p=$('rp').value,ph=$('rph').value.trim();
+ if(!n||!/^\S+@\S+\.\S+$/.test(e)||p.length<6){loginErr='Please add a name, a valid email and a 6+ character password 🌸';return render()}
+ if(S.users.some(u=>u.email===e)){loginErr='That email is already registered 🐾';return render()}
+ const u={id:uid(),name:n,email:e,pw:p,phone:ph,role:'customer'};S.users.push(u);save();sess=u.id;loginErr='';view='home';render();toast('Account created! 🎉')}
+function logout(){sess=null;draft={};authTab='login';render();toast('Logged out safely 👋')}
+function demo(e,p){$('le').value=e;$('lp').value=p}
+
+/* ---------- vehicles ---------- */
+function saveVeh(){const g=i=>$(i).value.trim();const o={make:g('vm'),model:g('vmo'),reg:g('vr').toUpperCase(),year:g('vy')};
+ if(!o.make||!o.model||!o.reg){msg='Fill make, model and registration 🚗';return render()}
+ if(draft.vid){Object.assign(S.vehicles.find(v=>v.id===draft.vid),o)}else S.vehicles.push({id:uid(),uid:sess,...o});
+ draft.vid=null;save();msg='Vehicle saved ✨';render()}
+function editVeh(id){draft.vid=id;render()}
+function delVeh(id){if(S.appts.some(a=>a.vid===id&&!['Cancelled','Delivered'].includes(a.status)))return toast('This vehicle has an active booking');
+ S.vehicles=S.vehicles.filter(v=>v.id!==id);save();render()}
+
+/* ---------- booking ---------- */
+function pick(k,v){draft[k]=v;if(k==='date')draft.slot=null;render()}
+function book(){const d=draft;if(!d.vid||!d.sid||!d.date||!d.slot)return;
+ if(taken(d.date,d.slot,d.resched))return toast('Sorry, that slot just filled up');
+ if(d.resched){const a=S.appts.find(x=>x.id===d.resched);a.date=d.date;a.slot=d.slot;a.status='Pending';
+  notify(sess,`Appointment rescheduled to ${dlabel(d.date)} at ${d.slot}.`);toast('Rescheduled! 📅')}
+ else{S.appts.push({id:uid(),uid:sess,vid:d.vid,sid:d.sid,date:d.date,slot:d.slot,status:'Pending',provider:null,paid:false,rating:0,comment:''});
+  notify(sess,`Booking received for ${svc(d.sid).name} on ${dlabel(d.date)} at ${d.slot}. We’ll confirm shortly!`);
+  S.users.filter(u=>u.role==='admin').forEach(u=>notify(u.id,'New booking request received.'));toast('Booking confirmed! 🎉')}
+ draft={};save();go('appts')}
+function cancelA(id){if(!confirm('Cancel this appointment?'))return;const a=S.appts.find(x=>x.id===id);a.status='Cancelled';
+ notify(a.uid,'Your appointment was cancelled.');save();render()}
+function resched(id){const a=S.appts.find(x=>x.id===id);draft={resched:id,vid:a.vid,sid:a.sid};view='book';render()}
+
+/* ---------- payment & feedback ---------- */
+function pay(id){const m=$('pm'+id).value;const a=S.appts.find(x=>x.id===id);
+ if(m==='Cash at workshop'){a.payMethod=m;a.paid=false;a.offline=true;toast('Pay at the counter 💵')}
+ else{a.paid=true;a.payMethod=m;toast('Payment successful! 💳✨')}
+ notify(a.uid,'Payment update: '+a.payMethod+(a.paid?' – paid.':' – pending at workshop.'));save();render()}
+function rate(id,n){S.appts.find(x=>x.id===id).rating=n;save();render()}
+function fb(id){const a=S.appts.find(x=>x.id===id);a.comment=$('fc'+id).value;a.fbDone=true;save();render();toast('Thanks for your feedback! 🌟')}
+
+/* ---------- staff ---------- */
+function assign(id){const a=S.appts.find(x=>x.id===id),p=$('as'+id).value;a.provider=p||null;
+ if(p&&a.status==='Pending'){a.status='Confirmed';notify(a.uid,'Your appointment is confirmed! ✅');notify(p,'A new job was assigned to you.')}save();render()}
+function advance(id){const a=S.appts.find(x=>x.id===id);const i=FLOW.indexOf(a.status);if(i<0||i>=4)return;a.status=FLOW[i+1];
+ notify(a.uid,`Your vehicle service is now: ${a.status}.`);save();render()}
+function addSvc(){const n=$('sn').value.trim(),p=+$('sp').value,d=$('sd').value.trim();if(!n||!(p>0))return toast('Name and price needed');
+ S.services.push({id:uid(),emoji:$('se').value||'🔧',name:n,desc:d,price:p});save();render()}
+function delSvc(id){S.services=S.services.filter(s=>s.id!==id);save();render()}
+function resetAll(){if(confirm('Reset all demo data?')){S=SEED();save();sess=null;render()}}
+
+/* ---------- views ---------- */
+const stepper=s=>{const i=FLOW.indexOf(s);return s==='Cancelled'?'':`<div class="steps">${FLOW.map((_,k)=>`<i class="${k<=i?'f':''}"></i>`).join('')}</div>`};
+function apptCard(a,role){const b=bill(a),v=veh(a.vid),s=svc(a.sid),done=['Completed','Delivered'].includes(a.status);
+ const cust=S.users.find(u=>u.id===a.uid);
+ let h=`<div class="card"><div class="row"><div><h3>${s.emoji} ${esc(s.name)}</h3><div class="mute">${esc(v.make)} ${esc(v.model)} · ${esc(v.reg)}${role!=='customer'?' · 👤 '+esc(cust?.name):''}</div>
+ <div class="mute">📅 ${dlabel(a.date)} · ⏰ ${a.slot}${a.provider?' · 🔧 '+esc(S.users.find(u=>u.id===a.provider)?.name):''}</div></div>
+ <div style="text-align:right;flex:0 0 auto"><span class="badge s-${a.status}">${a.status}</span></div></div>${stepper(a.status)}`;
+ if(role==='customer'){
+  if(['Pending','Confirmed'].includes(a.status))h+=`<button class="btn sky sm" onclick="resched('${a.id}')">Reschedule</button> <button class="btn ghost sm" onclick="cancelA('${a.id}')">Cancel</button>`;
+  if(done){h+=`<table class="bill" style="width:100%;max-width:300px;margin-top:8px"><tr><td>Service</td><td>${inr(b.s)}</td></tr><tr><td>GST 18%</td><td>${inr(b.g)}</td></tr><tr><td><b>Total</b></td><td>${inr(b.t)}</td></tr></table>`;
+   if(a.paid)h+=`<p><span class="badge s-Delivered">Paid via ${esc(a.payMethod)} ✓</span></p>`;
+   else h+=`<div class="row" style="margin-top:6px"><select id="pm${a.id}"><option>UPI</option><option>Credit card</option><option>Debit card</option><option>Net banking</option><option>Cash at workshop</option></select><button class="btn pink" onclick="pay('${a.id}')">${a.offline?'Pay online instead':'Pay now'}</button></div>`+(a.offline?'<div class="mute">Offline payment chosen – pay at the counter.</div>':'');
+   if(a.fbDone)h+=`<p>Your rating: ${'⭐'.repeat(a.rating)||'—'} <span class="mute">${esc(a.comment)}</span></p>`;
+   else h+=`<div class="stars">${[1,2,3,4,5].map(n=>`<button class="${a.rating>=n?'on':''}" onclick="rate('${a.id}',${n})">⭐</button>`).join('')}</div><textarea id="fc${a.id}" rows="2" placeholder="How was your service?"></textarea><button class="btn mint sm" onclick="fb('${a.id}')">Send feedback</button>`}
+ }
+ if(role==='admin'&&a.status!=='Cancelled'){const ps=S.users.filter(u=>u.role==='provider');
+  h+=`<div class="row"><select id="as${a.id}"><option value="">Unassigned</option>${ps.map(p=>`<option value="${p.id}" ${a.provider===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select><button class="btn sky sm" onclick="assign('${a.id}')">Assign${a.status==='Pending'?' & confirm':''}</button></div>`}
+ if(role==='provider'&&FLOW.indexOf(a.status)>0&&a.status!=='Delivered'){const L={Confirmed:'▶ Start service','In Progress':'✔ Mark completed',Completed:'🚗 Mark delivered'}[a.status];h+=`<button class="btn mint" onclick="advance('${a.id}')">${L}</button>`}
+ return h+'</div>'}
+
+function vHome(u){const mine=S.appts.filter(a=>a.uid===u.id),notes=S.notes.filter(n=>n.to===u.id).slice(0,5);
+ const next=mine.filter(a=>['Pending','Confirmed','In Progress'].includes(a.status)).sort((a,b)=>a.date.localeCompare(b.date))[0];
+ return `<div class="hero"><h2>Hi ${esc(u.name.split(' ')[0])}! 👋</h2><div>${next?`Next up: ${svc(next.sid).emoji} ${esc(svc(next.sid).name)} on ${dlabel(next.date)} at ${next.slot}`:'Your car deserves some love today 💖'}</div><br><button class="btn" style="color:#3b2f4a" onclick="go('book')">Book a service</button></div>
+ <div class="grid"><div class="card stat"><b>${S.vehicles.filter(v=>v.uid===u.id).length}</b>vehicles</div><div class="card stat"><b>${mine.filter(a=>!['Cancelled','Delivered','Completed'].includes(a.status)).length}</b>active bookings</div><div class="card stat"><b>${mine.filter(a=>['Completed','Delivered'].includes(a.status)).length}</b>services done</div></div>
+ <div class="card"><h3>🔔 Notifications</h3>${notes.map(n=>`<div class="mute">• ${esc(n.text)} <i>(${esc(n.at)})</i></div>`).join('')||'<div class="mute">Nothing yet.</div>'}</div>`}
+
+function vVeh(u){const e=S.vehicles.find(v=>v.id===draft.vid)||{};
+ return `<div class="card"><h2>${draft.vid?'Edit':'Add'} vehicle 🚙</h2>${msg?`<p>${msg}</p>`:''}<div class="row"><div><label>Make</label><input id="vm" value="${esc(e.make)}" placeholder="Honda"></div><div><label>Model</label><input id="vmo" value="${esc(e.model)}" placeholder="City"></div></div>
+ <div class="row"><div><label>Registration no.</label><input id="vr" value="${esc(e.reg)}" placeholder="KA01AB1234"></div><div><label>Year</label><input id="vy" type="number" value="${esc(e.year)}" placeholder="2021"></div></div>
+ <button class="btn pink" onclick="saveVeh()">Save vehicle</button> ${draft.vid?'<button class="btn ghost" onclick="draft.vid=null;render()">Cancel</button>':''}</div>
+ <div class="grid">${S.vehicles.filter(v=>v.uid===u.id).map(v=>`<div class="card"><div class="emoji">🚗</div><h3>${esc(v.make)} ${esc(v.model)}</h3><div class="mute">${esc(v.reg)} ${v.year?'· '+esc(v.year):''}</div><br><button class="btn sky sm" onclick="editVeh('${v.id}')">Edit</button> <button class="btn ghost sm" onclick="delVeh('${v.id}')">Delete</button></div>`).join('')||'<div class="card mute">No vehicles yet – add your first one above!</div>'}</div>`}
+
+function vSvc(){return `<h2>Our services ✨</h2><div class="grid">${S.services.map(s=>`<div class="card"><div class="emoji">${esc(s.emoji)}</div><h3>${esc(s.name)}</h3><div class="mute">${esc(s.desc)}</div><p><b>${inr(s.price)}</b></p><button class="btn pink sm" onclick="draft={sid:'${s.id}'};go('book')">Book this</button></div>`).join('')}</div>`}
+
+function vBook(u){const vs=S.vehicles.filter(v=>v.uid===u.id);
+ if(!vs.length)return `<div class="card"><h2>Add a vehicle first 🚗</h2><button class="btn pink" onclick="go('veh')">Add vehicle</button></div>`;
+ const d=draft;return `<div class="card"><h2>${d.resched?'Reschedule':'Book'} a service 📅</h2>
+ <label>1. Vehicle</label><div class="chips">${vs.map(v=>`<button class="chip ${d.vid===v.id?'on':''}" ${d.resched?'disabled':''} onclick="pick('vid','${v.id}')">🚗 ${esc(v.make)} ${esc(v.model)}</button>`).join('')}</div>
+ <label>2. Service</label><div class="chips">${S.services.map(s=>`<button class="chip ${d.sid===s.id?'on':''}" ${d.resched?'disabled':''} onclick="pick('sid','${s.id}')">${esc(s.emoji)} ${esc(s.name)}</button>`).join('')}</div>
+ <label>3. Date</label><div class="chips">${days().map(x=>`<button class="chip ${d.date===x?'on':''}" onclick="pick('date','${x}')">${dlabel(x)}</button>`).join('')}</div>
+ ${d.date?`<label>4. Time slot</label><div class="chips">${SLOTS.map(t=>`<button class="chip ${d.slot===t?'on':''}" ${taken(d.date,t,d.resched)?'disabled':''} onclick="pick('slot','${t}')">${t}</button>`).join('')}</div>`:''}
+ <button class="btn pink" ${d.vid&&d.sid&&d.date&&d.slot?'':'disabled'} onclick="book()">Confirm booking</button></div>`}
+
+function vAppts(u,hist){const l=S.appts.filter(a=>a.uid===u.id&&(hist?['Completed','Delivered','Cancelled'].includes(a.status):true)).sort((a,b)=>b.date.localeCompare(a.date));
+ return `<h2>${hist?'Service history 📖':'My appointments'}</h2>`+(l.map(a=>apptCard(a,'customer')).join('')||'<div class="card mute">Nothing here yet.</div>')}
+
+function vAdmin(){const l=[...S.appts].sort((a,b)=>b.date.localeCompare(a.date));
+ return `<h2>All appointments 🗂️</h2>`+(l.map(a=>apptCard(a,'admin')).join('')||'<div class="card mute">No bookings yet.</div>')+
+ `<h2>Manage services 🛠️</h2><div class="card"><div class="row"><div><label>Emoji</label><input id="se" placeholder="🔧"></div><div><label>Name</label><input id="sn"></div><div><label>Price (₹)</label><input id="sp" type="number"></div></div><label>Description</label><input id="sd"><button class="btn pink" onclick="addSvc()">Add service</button></div>
+ <div class="grid">${S.services.map(s=>`<div class="card">${esc(s.emoji)} <b>${esc(s.name)}</b> · ${inr(s.price)}<br><button class="btn ghost sm" onclick="delSvc('${s.id}')">Remove</button></div>`).join('')}</div>
+ <h2>Users 👥</h2><div class="card mute">${S.users.map(x=>`${esc(x.name)} (${x.role})`).join(' · ')}</div>
+ <div class="card"><h3>Customer feedback ⭐</h3>${S.appts.filter(a=>a.fbDone).map(a=>`<div class="mute">${'⭐'.repeat(a.rating)} ${esc(svc(a.sid).name)} – ${esc(a.comment)}</div>`).join('')||'<span class="mute">None yet.</span>'}</div>
+ <button class="btn ghost sm" onclick="resetAll()">Reset demo data</button>`}
+
+function vProv(u){const l=S.appts.filter(a=>a.provider===u.id).sort((a,b)=>a.date.localeCompare(b.date));
+ return `<h2>My assigned jobs 🔧</h2>`+(l.map(a=>apptCard(a,'provider')).join('')||'<div class="card mute">No jobs assigned yet.</div>')}
+
+function vAuth(){return `<div class="wrap" style="max-width:440px"><div style="text-align:center;margin:20px 0"><div class="emoji" style="font-size:60px">🚗💨</div><div class="logo">Auto<span>Hub</span></div><div class="mute">Cute, simple vehicle servicing</div></div>
+ <div class="card"><div class="tabs"><button class="btn ${authTab==='login'?'pink':''}" onclick="authTab='login';loginErr='';render()">Login</button><button class="btn ${authTab==='reg'?'pink':''}" onclick="authTab='reg';loginErr='';render()">Register</button></div>
+ ${loginErr?`<p>${loginErr}</p>`:''}
+ ${authTab==='login'?`<label>Email</label><input id="le" type="email"><label>Password</label><input id="lp" type="password" onkeydown="if(event.key==='Enter')doLogin()"><button class="btn pink" onclick="doLogin()">Login</button>
+ <p class="mute">Try a demo staff login:</p><div class="chips"><button class="chip" onclick="demo('admin@autohub.com','admin123')">Admin</button><button class="chip" onclick="demo('mech@autohub.com','mech123')">Service provider</button></div>`
+ :`<label>Name</label><input id="rn"><label>Email</label><input id="re" type="email"><label>Phone</label><input id="rph" type="tel"><label>Password (6+ chars)</label><input id="rp" type="password"><button class="btn pink" onclick="doReg()">Create account</button>`}</div></div>`}
+
+function render(){const u=me();
+ if(!u){$('app').innerHTML=vAuth();return}
+ const T={customer:[['home','🏠 Home'],['veh','🚗 Vehicles'],['svc','✨ Services'],['book','📅 Book'],['appts','📋 Appointments'],['hist','📖 History']],admin:[['adm','🗂️ Dashboard']],provider:[['prov','🔧 My jobs']]}[u.role];
+ if(!T.some(t=>t[0]===view))view=T[0][0];
+ const V={home:vHome,veh:vVeh,svc:vSvc,book:vBook,appts:u=>vAppts(u,false),hist:u=>vAppts(u,true),adm:vAdmin,prov:vProv}[view];
+ $('app').innerHTML=`<header><div class="logo">Auto<span>Hub</span> 🚗</div><div class="row" style="flex:0 0 auto"><span class="mute">${esc(u.name)} · ${u.role}</span><button class="btn sm" onclick="logout()">Logout</button></div></header>
+ <nav>${T.map(t=>`<button class="${view===t[0]?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('')}</nav>${V(u)}`}
+render();
+</script>
+</body>
+</html>
